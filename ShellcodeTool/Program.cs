@@ -10,7 +10,7 @@ namespace ShellcodeTool
 {
     class Program
     {
-        private const string path = @"C:\Users\zkana\source\repos\FNameToStringEx\ShellcodeTool\cpp\";
+        private const string path = @"E:\source\repos\ShellcodeTool\cpp\";
         private const string fileName = "c-shellcode";
 
 
@@ -39,13 +39,13 @@ namespace ShellcodeTool
   }
   ";
 
-        static bool TryStartBuildingScript(string fileName)
+        static int StartBuildingScript(string s)
         {
             var cl = new Process();
 
             cl.StartInfo.WorkingDirectory = path;
             cl.StartInfo.FileName = "cmd.exe";
-            cl.StartInfo.Arguments = @"/c" + path + fileName + ".bat";
+            cl.StartInfo.Arguments = @"/c" + path + s + ".bat";
             cl.StartInfo.UseShellExecute = false;
             cl.StartInfo.RedirectStandardOutput = true;
 
@@ -61,16 +61,16 @@ namespace ShellcodeTool
 
             cl.WaitForExit();
 
-            return cl.ExitCode == 0;
+            return cl.ExitCode;
         }
 
         static void Main(string[] args)
         {
             //CPP -> ASM
-            if (!TryStartBuildingScript("build1"))
+            int exitCode; if ((exitCode = StartBuildingScript("build1")) != 0)
             {
-                Console.WriteLine("Expected CL to return 0");
-                Thread.Sleep(-1);
+                Console.WriteLine("Expected CL to return 0 but it returned {0}", exitCode);
+                return;
             }
 
             string fileContent = File.ReadAllText(path + fileName + ".asm");
@@ -88,9 +88,9 @@ namespace ShellcodeTool
             File.WriteAllText(path + fileName + ".asm", fileContent);
 
             //ASM -> EXE
-            if (!TryStartBuildingScript("build2"))
+            if ((exitCode = StartBuildingScript("build2")) != 0)
             {
-                Console.WriteLine("Expected ML64 to return 0");
+                Console.WriteLine("Expected ML64 to return 0 but it returned {0}", exitCode);
                 return;
             }
 
@@ -127,7 +127,9 @@ namespace ShellcodeTool
                 Console.WriteLine("Couldn't get the text section from this pe file.");
             }
 
-            Thread.Sleep(-1);
+            Console.WriteLine("Exiting in 5 seconds.");
+
+            Thread.Sleep(5000);
         }
     }
 }
