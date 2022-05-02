@@ -10,9 +10,8 @@ namespace ShellcodeTool
 {
     class Program
     {
-        private const string path = @"E:\source\repos\ShellcodeTool\cpp\";
+        private const string path = @"E:\source\repos\FNameToStringEx\ShellcodeTool\cpp\";
         private const string fileName = "c-shellcode";
-
 
         private const string headerP1 = @"
 #pragma once
@@ -79,6 +78,7 @@ namespace ShellcodeTool
             fileContent = fileContent.Replace("INCLUDELIB OLDNAMES", string.Empty);
 
             var remove1 = fileContent.IndexOf(";	COMDAT pdata");
+            remove1 = remove1 == -1 ? fileContent.IndexOf("pdata	SEGMENT") : remove1;
             var remove2 = fileContent.IndexOf("; Function compile flags: /Odtp");
             fileContent = remove1 != -1 ? fileContent.Remove(remove1, remove2 - remove1) : fileContent;
 

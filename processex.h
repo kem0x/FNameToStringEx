@@ -7,16 +7,24 @@ public:
     HANDLE handle;
     DWORD pid;
     HWND hwnd;
-    uint64_t moduleBase, modulesize;
+    MODULEENTRY32 currentModule;
 
+    // Templated readprocessmemory
     template <typename T>
     T RPM(void* address)
     {
         T buffer = {};
-        ReadProcessMemory(handle, address, &buffer, sizeof(T), nullptr);
+        ReadProcessMemory(handle, address, &buffer, sizeof(buffer), nullptr);
         return buffer;
     }
 
+    // Normal readprocessmemory
+    auto RPM(void* address, void* buffer, size_t size)
+    {
+        return ReadProcessMemory(handle, address, buffer, size, nullptr);
+    }
+
+    // Writeprocessmemory
     auto WPM(void* address, void* buffer, size_t size)
     {
         return WriteProcessMemory(handle, address, buffer, size, nullptr);
@@ -27,6 +35,12 @@ public:
         return VirtualAllocEx(this->handle, address, size, allocationType, protection);
     }
 
+    auto Free(void* address, size_t size, DWORD freeType = MEM_RELEASE)
+    {
+        return VirtualFreeEx(this->handle, address, size, freeType);
+    }
+
+    // CreateRemoteThread
     auto CRT(void* address, void* param = nullptr)
     {
         return CreateRemoteThread(this->handle, nullptr, 0, reinterpret_cast<LPTHREAD_START_ROUTINE>(address), param, 0, nullptr);
@@ -47,13 +61,15 @@ public:
                     if (!wcscmp(moduleEntry.szModule, modName))
                     {
                         CloseHandle(hSnapShot);
-                        modulesize = moduleEntry.modBaseSize;
-                        moduleBase = reinterpret_cast<uint64_t>(moduleEntry.modBaseAddr);
-                        return;
+                        currentModule = moduleEntry;
+
+                        return (currentModule.modBaseAddr != nullptr && currentModule.modBaseSize != 0);
                     }
                 } while (Module32Next(hSnapShot, &moduleEntry));
             }
         }
+
+        return false;
     }
 
     ProcessEX()
@@ -71,9 +87,14 @@ public:
 
         this->handle = OpenProcess(PROCESS_ALL_ACCESS, false, this->pid);
 
-        this->setCurrModule(L"FortniteClient-Win64-Shipping.exe");
-
-        printf("[+] Found the module, base: 0x%p\n", moduleBase);
+        if (this->setCurrModule(L"FortniteClient-Win64-Shipping.exe"))
+        {
+            printf("[+] Found the module, Base: 0x%p, Size: 0x%p\n", currentModule.modBaseAddr, currentModule.modBaseSize);
+        }
+        else
+        {
+            printf("[x] Couldn't find the module, is module name correct and you have admin permissions?.\n");
+        }
     }
 
     uint64_t FindPatternEx(const char* pattern, const char* mask, uint64_t begin, uint64_t end) // https://guidedhacking.com/threads/external-signature-pattern-scan-issues.12618/?view=votes#post-73200
@@ -156,6 +177,6 @@ public:
         }
         pattern[j] = mask[j] = '\0';
 
-        return FindPatternEx(pattern, mask, moduleBase, moduleBase + modulesize);
+        return FindPatternEx(pattern, mask, (uint64_t)currentModule.modBaseAddr, (uint64_t)currentModule.modBaseAddr + currentModule.modBaseSize);
     }
 };
