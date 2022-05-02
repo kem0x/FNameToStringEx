@@ -56,20 +56,20 @@ public:
             moduleEntry.dwSize = sizeof(moduleEntry);
             if (Module32First(hSnapShot, &moduleEntry))
             {
-                do
+                while (Module32Next(hSnapShot, &moduleEntry))
                 {
                     if (!wcscmp(moduleEntry.szModule, modName))
                     {
-                        CloseHandle(hSnapShot);
                         currentModule = moduleEntry;
-
-                        return (currentModule.modBaseAddr != nullptr && currentModule.modBaseSize != 0);
+                        break;
                     }
-                } while (Module32Next(hSnapShot, &moduleEntry));
+                }
             }
+
+            CloseHandle(hSnapShot);
         }
 
-        return false;
+        return (currentModule.modBaseAddr != nullptr && currentModule.modBaseSize != 0);
     }
 
     ProcessEX()
@@ -89,7 +89,7 @@ public:
 
         if (this->setCurrModule(L"FortniteClient-Win64-Shipping.exe"))
         {
-            printf("[+] Found the module, Base: 0x%p, Size: 0x%p\n", currentModule.modBaseAddr, currentModule.modBaseSize);
+            printf("[+] Found the module, Base: 0x%p, Size: %i\n", currentModule.modBaseAddr, currentModule.modBaseSize);
         }
         else
         {

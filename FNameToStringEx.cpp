@@ -35,18 +35,19 @@ auto FNameToStringEx(ProcessEX* proc, uint32_t index)
             printf("[x] Couldn't create thread, please make sure you ran this tool as admin.\n");
         else
             printf("[x] Thread creation failed, Error code: 0x%X\n", error);
-            
+
         proc->Free(Shellcode, Shellcode::bytes.size() + 1);
-        return ret;
     }
-
-    WaitForSingleObject(hThread, INFINITE);
-
-    scData = proc->RPM<SHELL_CODE_DATA>(scDataGame);
-
-    if (wchar_t buffer[MAX_FNAME]; proc->RPM(scData.ret, &buffer, sizeof(buffer)))
+    else
     {
-        ret = buffer;
+        WaitForSingleObject(hThread, INFINITE);
+
+        scData = proc->RPM<SHELL_CODE_DATA>(scDataGame);
+
+        if (wchar_t buffer[MAX_FNAME]; proc->RPM(scData.ret, &buffer, sizeof(buffer)))
+        {
+            ret = buffer;
+        }
     }
 
     return ret;
@@ -63,9 +64,6 @@ int main()
         printf("[=] Enter index: ");
         uint32_t index;
         std::cin >> index;
-
-        if (index == -1)
-            break;
 
         if (auto name = FNameToStringEx(gameProcess, index); !name.empty())
         {

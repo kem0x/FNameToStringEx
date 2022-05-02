@@ -1,6 +1,8 @@
 #include <stdint.h>
 #include "../../defs.h"
 
+//No external dependencies, No global\static variables, only stack based strings unless you know what you're doing.
+
 int main()
 {
     return 0;
